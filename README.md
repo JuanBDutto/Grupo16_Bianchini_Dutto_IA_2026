@@ -1,0 +1,1 @@
+# Grupo16_Bianchini_Dutto_IA_2026
