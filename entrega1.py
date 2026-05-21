@@ -194,7 +194,7 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
             return tuple(acciones_posibles)
     
     problema = Entrega1(estado_inicial)
-    resultado = astar(problema)
+    resultado = astar(problema,graph_search=True)
     return [accion for accion, estado in resultado.path()[1:]]
 
 if __name__ == "__main__":
