@@ -40,24 +40,24 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
         min_y -= 1
         max_y += 1
 
-    global Zonas_sombra, MIN_X, MAX_X, MIN_Y, MAX_Y
+    global Zonas_sombra, MIN_FILA, MAX_FILA, MIN_COLUMNA, MAX_COLUMNA
     Zonas_sombra = zonas_sombra
 
-    MIN_X = min_x
-    MAX_X = max_x
-    MIN_Y = min_y
-    MAX_Y = max_y
+    MIN_FILA = min_x
+    MAX_FILA = max_x
+    MIN_COLUMNA = min_y
+    MAX_COLUMNA = max_y
 
     class Entrega1(SearchProblem):
 
         def actions(self, state):
             posicion_rover, bateria, taladro, muestras_igneas, muestras_sedimentarias, carga = state
             muestras_restantes = len(muestras_igneas) + len(muestras_sedimentarias)
-
+            
             posibles_acciones = []
             if bateria - Costos_bateria["moverse"] > 0:
                 posibles_acciones.extend(self.mover_rover(posicion_rover[0], posicion_rover[1]))
-            if bateria - Costos_bateria["sobremarcha"] > 0 and muestras_restantes > 0:
+            if bateria - Costos_bateria["sobremarcha"] > 0:
                 posibles_acciones.extend(self.mover_rover_sobremarcha(posicion_rover[0], posicion_rover[1]))
             if taladro == "termico" and bateria - Costos_bateria["recolectar"] > 0 and posicion_rover in muestras_igneas and carga < 2:
                 posibles_acciones.extend(self.recolectar_muestra("ignea"))
@@ -94,7 +94,7 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
                 else:
                     return (posicion_rover, bateria - Costos_bateria["recargar"], taladro, muestras_igneas, muestras_sedimentarias, carga)
             elif action[0] == "depositar":
-                return (posicion_rover, bateria - Costos_bateria["depositar"], taladro, muestras_igneas, muestras_sedimentarias, carga - carga)
+                return (posicion_rover, bateria - Costos_bateria["depositar"], taladro, muestras_igneas, muestras_sedimentarias, 0)
             elif action[0] == "equipar":
                 return (posicion_rover, bateria - Costos_bateria["equipar"], (action[1]), muestras_igneas, muestras_sedimentarias, carga)
 
@@ -123,23 +123,38 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
 
         def heuristic(self, state):
             posicion_rover, bateria, taladro, muestras_igneas, muestras_sedimentarias, carga = state
-            muestras_restantes = len(muestras_igneas) + len(muestras_sedimentarias)
+            todas_muestras = list(muestras_igneas) + list(muestras_sedimentarias)
 
-            if muestras_restantes == 0:
-               return 0
+            if not todas_muestras:
+                return 0
 
-            distancia_minima = min(
-                abs(posicion_rover[0] - muestra[0]) +
-                abs(posicion_rover[1] - muestra[1])
-                for muestra in muestras_igneas + muestras_sedimentarias
-            )
+            # distancia a la muestra más cercana
+            dist_minima = min(
+                abs(posicion_rover[0] - m[0]) + abs(posicion_rover[1] - m[1])
+                for m in todas_muestras
+                )
 
-            return (muestras_restantes * Costos_Minutos["recolectar"] + ((distancia_minima + 1) // 2))
+            # costo mínimo de recolección
+            costo_recoleccion = len(todas_muestras) * Costos_Minutos["recolectar"]
+
+            # al menos un depósito por cada 2 muestras
+            costo_depositos = ((len(todas_muestras) + carga) // 2) * 2
+
+            # cambio de taladro si hace falta
+            costo_taladro = 0
+            if muestras_igneas and muestras_sedimentarias:
+                costo_taladro = Costos_Minutos["equipar"]
+            elif muestras_igneas and taladro != "termico":
+                costo_taladro = Costos_Minutos["equipar"]
+            elif muestras_sedimentarias and taladro != "percusion":
+                costo_taladro = Costos_Minutos["equipar"]
+
+            return (dist_minima + 1) // 2 + costo_recoleccion + costo_depositos + costo_taladro
         
         def posicion_valida(self, posicion):
             return (
-                MIN_X <= posicion[0] <= MAX_X and
-                MIN_Y <= posicion[1] <= MAX_Y
+                MIN_FILA <= posicion[0] <= MAX_FILA and
+                MIN_COLUMNA <= posicion[1] <= MAX_COLUMNA
             )
 
         def mover_rover(self, fil, col):
