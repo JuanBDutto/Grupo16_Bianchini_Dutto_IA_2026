@@ -1,7 +1,6 @@
 from simpleai.search import(
     CspProblem,
-    backtrack,
-    min_conflicts
+    backtrack
 )
 
 from itertools import combinations
@@ -12,16 +11,16 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
 
 
     variables = []
-    for i in range(habs):
-        variables.append(f"hab_{i}")
-    for i in range(generators):
-        variables.append(f"gen_{i}")
-    for i in range(labs):
-        variables.append(f"lab_{i}")
-    for i in range(deposits):
-        variables.append(f"dep_{i}")
     for i in range(airlocks):
         variables.append(f"air_{i}")
+    for i in range(deposits):
+        variables.append(f"dep_{i}")
+    for i in range(labs):
+        variables.append(f"lab_{i}")
+    for i in range(generators):
+        variables.append(f"gen_{i}")
+    for i in range(habs):
+        variables.append(f"hab_{i}")
     
     celdas_validas = [
         (fila, columna)
@@ -60,11 +59,6 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
         fila1, columna1 = values[0]
         fila2, columna2 = values[1]
         return abs(fila1 - fila2) + abs(columna1 - columna2) != 1
-
-    def es_adyacente(variables, values):
-        fila1, columna1 = values[0]
-        fila2, columna2 = values[1]
-        return abs(fila1 - fila2) + abs(columna1 - columna2) == 1
     
     habs_total = [variable for variable in variables if variable.startswith("hab_")]
     gens_total = [variable for variable in variables if variable.startswith("gen_")]
@@ -91,8 +85,23 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
     for lab in labs_total:
         constraints.append(((lab, *deps_total), lab_adyacente_deposito))
 
-    
+    def ruta_evacuacion(variables, values):
+        hab_pos = values[0]
+        celda_arriba = (hab_pos[0] - 1, hab_pos[1])
+        celda_abajo = (hab_pos[0] + 1, hab_pos[1])
+        celda_izquierda = (hab_pos[0], hab_pos[1] - 1)
+        celda_derecha = (hab_pos[0], hab_pos[1] + 1)
+        celdas_adyacentes = [celda_arriba, celda_abajo, celda_izquierda, celda_derecha]
 
+        for celda in celdas_adyacentes:
+            if celda in celdas_validas and celda not in values[1:]:
+                return True
+
+        return False
+
+
+    for hab in habs_total:
+        constraints.append(((hab, *[var for var in variables if var != hab]), ruta_evacuacion))
 
     problem = CspProblem(variables, domains, constraints)
     solution = backtrack(problem)
