@@ -41,12 +41,12 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
     for var1, var2 in combinations(variables, 2):
         constraints.append(((var1, var2), sin_superposicion))
 
-    def exclusa_en_borde(variables, values):
+    def esclusa_en_borde(variables, values):
         fila, columna = values[0]
         return fila == 0 or fila == filas - 1 or columna == 0 or columna == columnas - 1
 
     for air in [f"air_{i}" for i in range(airlocks)]:
-        constraints.append(((air,), exclusa_en_borde))
+        constraints.append(((air,), esclusa_en_borde))
 
     def habitacion_en_interior(variables, values):
         fila, columna = values[0]
@@ -111,7 +111,7 @@ def build_camp(camp_size, habs, generators, labs, deposits, airlocks, craters):
 
     resultado = []
     for var, pos in solution.items():
-        tipo = var.rsplit("_", 1)[0]  # "hab_0" -> "hab", "gen_0" -> "gen"
+        tipo = var.rsplit("_", 1)[0] 
         resultado.append((tipo, pos[0], pos[1]))
     return resultado
 

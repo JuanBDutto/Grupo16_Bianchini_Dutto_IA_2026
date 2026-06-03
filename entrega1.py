@@ -128,19 +128,19 @@ def planear_rover(rover_inicio, bateria_inicial, zonas_sombra, muestras_igneas, 
             if not todas_muestras:
                 return 0
 
-            # distancia a la muestra más cercana
+            
             dist_minima = min(
                 abs(posicion_rover[0] - m[0]) + abs(posicion_rover[1] - m[1])
                 for m in todas_muestras
                 )
 
-            # costo mínimo de recolección
+            
             costo_recoleccion = len(todas_muestras) * Costos_Minutos["recolectar"]
 
-            # al menos un depósito por cada 2 muestras
+            
             costo_depositos = ((len(todas_muestras) + carga) // 2) * 2
 
-            # cambio de taladro si hace falta
+            
             costo_taladro = 0
             if muestras_igneas and muestras_sedimentarias:
                 costo_taladro = Costos_Minutos["equipar"]
